@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تصميم وتحرير البطاقة الأمامية</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&family=David+Libre:wght@400;500;700&display=swap');
+        
+        * {
+            box-sizing: border-box;
+            font-family: 'Cairo', Arial, sans-serif;
+        }
+
+        body {
+            background-color: #f1f5f9;
+            margin: 0;
+            padding: 10px;
+            color: #1e293b;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            background: #ffffff;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            padding: 15px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 15px;
+        }
+
+        header h1 {
+            color: #1b5e20;
+            font-size: 20px;
+            margin: 0;
+            font-weight: 700;
+        }
+
+        /* أدوات التحرير المتقدمة */
+        .editor-layout {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+        }
+
+        @media(min-width: 900px) {
+            .editor-layout {
+                grid-template-columns: 280px 1fr;
+            }
+        }
+
+        .control-panel {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 15px;
+        }
+
+        .control-panel h3 {
+            margin-top: 0;
+            font-size: 15px;
+            color: #1e293b;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 8px;
+            margin-bottom: 15px;
+        }
+
+        .control-group {
+            margin-bottom: 15px;
+        }
+
+        .control-group label {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            color: #475569;
+            margin-bottom: 6px;
+        }
+
+        .control-group input[type="range"] {
+            width: 100%;
+            accent-color: #2e7d32;
+        }
+
+        /* أزرار التحريك الدقيق */
+        .nudge-container {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            width: 150px;
+            margin: 15px auto;
+        }
+
+        .nudge-btn {
+            background-color: #cbd5e1;
+            border: none;
+            border-radius: 6px;
+            padding: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            text-align: center;
+            transition: background 0.2s;
+        }
+
+        .nudge-btn:hover {
+            background-color: #94a3b8;
+        }
+
+        .nudge-btn:active {
+            background-color: #64748b;
+            color: white;
+        }
+
+        /* مساحة العمل والبطاقة */
+        .workspace-container {
+            width: 100%;
+            overflow-x: auto;
+            border: 2px solid #cbd5e1;
+            border-radius: 12px;
+            background: #e2e8f0;
+            padding: 15px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+        }
+
+        .workspace {
+            position: relative;
+            width: 1000px;
+            height: 673px;
+            background-image: url('https://i.imgur.com/M2TppPN.jpeg');
+            background-size: 100% 100%;
+            background-repeat: no-repeat;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            flex-shrink: 0;
+        }
+
+        /* خصائص العناصر القابلة للسحب والخطوط */
+        .draggable {
+            position: absolute;
+            cursor: move;
+            user-select: none;
+            padding: 1px 4px;
+            border: 1px dashed transparent;
+            text-align: right;
+            direction: rtl;
+            line-height: 1.1;
+        }
+
+        /* تطبيق الخطوط المطلوبة */
+        .ar-element {
+            color: #000000 !important; /* أسود تام */
+            font-family: 'Arial', sans-serif;
+            font-weight: bold; /* Arial Bold */
+        }
+
+        .he-element {
+            color: #000000 !important; /* أسود تام */
+            font-family: 'David', 'David Bold', 'David Libre', serif;
+            font-weight: bold; /* David Bold */
+        }
+
+        .draggable.selected {
+            border-color: #ef4444;
+            background-color: rgba(239, 68, 68, 0.1);
+            border-radius: 3px;
+            z-index: 999;
+        }
+
+        #front-img {
+            width: 172px;
+            height: 226px;
+            object-fit: cover;
+            display: none;
+            border: 1px solid #1e293b;
+        }
+
+        .action-btns {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 15px;
+            justify-content: center;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-prev { background-color: #64748b; color: white; }
+        .btn-prev:hover { background-color: #475569; }
+        .btn-save { background-color: #28a745; color: white; }
+        .btn-save:hover { background-color: #218838; }
+        .btn-next { background-color: #007bff; color: white; }
+        .btn-next:hover { background-color: #0056b3; }
+
+        .selected-indicator {
+            font-size: 12px;
+            color: #2e7d32;
+            font-weight: bold;
+            margin-bottom: 10px;
+            text-align: center;
+            background-color: #e8f5e9;
+            padding: 6px;
+            border-radius: 6px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <h1>الخطوة 2: تحرير وتعديل البطاقة الأمامية</h1>
+        </header>
+
+        <div class="editor-layout">
+            <!-- لوحة التحكم -->
+            <div class="control-panel">
+                <h3>أدوات التعديل والتخصيص</h3>
+                <div id="selected-indicator" class="selected-indicator">العنصر المحدد حالياً: <span id="active-el-name">لا يوجد</span></div>
+                
+                <div class="control-group">
+                    <label>حجم الخط (بكسل):</label>
+                    <input type="range" id="fontSize-ctrl" min="10" max="50" value="18">
+                </div>
+                <div class="control-group">
+                    <label>الشفافية:</label>
+                    <input type="range" id="opacity-ctrl" min="0" max="1" step="0.05" value="1">
+                </div>
+                <div class="control-group">
+                    <label>تأثير التغبيش (Blur):</label>
+                    <input type="range" id="blur-ctrl" min="0" max="5" step="0.1" value="0">
+                </div>
+
+                <!-- التحريك الدقيق بالبكسل -->
+                <div class="control-group" style="text-align: center;">
+                    <label>التحريك الدقيق (بكسل واحد):</label>
+                    <div class="nudge-container">
+                        <div></div>
+                        <button class="nudge-btn" onclick="nudge('up')">▲</button>
+                        <div></div>
+                        <button class="nudge-btn" onclick="nudge('right')">▶</button>
+                        <div style="font-size: 11px; display:flex; align-items:center; justify-content:center; font-weight:bold; color:#64748b;">اتجاه</div>
+                        <button class="nudge-btn" onclick="nudge('left')">◀</button>
+                        <div></div>
+                        <button class="nudge-btn" onclick="nudge('down')">▼</button>
+                        <div></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- مساحة العمل -->
+            <div>
+                <div class="workspace-container">
+                    <div class="workspace" id="card-front-workspace">
+                        <!-- العناصر يتم توليدها ديناميكياً هنا -->
+                    </div>
+                </div>
+
+                <div class="action-btns">
+                    <button class="btn btn-prev" onclick="window.location.href='index.html'">◀ رجوع لتعديل البيانات</button>
+                    <button class="btn btn-save" onclick="saveImage()">💾 حفظ لقطة الشاشة للبطاقة الأمامية</button>
+                    <button class="btn btn-next" onclick="window.location.href='appendix.html'">الذهاب لتعديل الملحق ▶</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let activeElement = null;
+        const workspace = document.getElementById('card-front-workspace');
+
+        // استعادة البيانات من local storage
+        const storedData = localStorage.getItem('pal_id_data');
+        const photoData = localStorage.getItem('id_photo');
+
+        if (!storedData) {
+            alert('الرجاء تعبئة البيانات أولاً!');
+            window.location.href = 'index.html';
+        }
+
+        const data = JSON.parse(storedData);
+
+        // بناء الواجهة والتوزيع المبدئي بدقة
+        function buildCard() {
+            // 1. الصورة الشخصية
+            if (photoData) {
+                const img = document.createElement('img');
+                img.src = photoData;
+                img.id = 'front-img';
+                img.className = 'draggable';
+                img.style.display = 'block';
+                img.style.left = '60px';
+                img.style.top = '90px';
+                workspace.appendChild(img);
+                makeDraggable(img, 'الصورة الشخصية');
+            }
+
+            // 2. توزيع الحقول (إحداثيات مبدئية تناسب القالب بدقة)
+            const fields = [
+                // رقم الهوية
+                { text: data.idNumber, top: '235px', left: '600px', lang: 'ar', name: 'رقم الهوية' },
+                
+                // الاسم الشخصي
+                { text: data.firstNameAr, top: '280px', left: '600px', lang: 'ar', name: 'الاسم (عربي)' },
+                { text: data.firstNameHe, top: '298px', left: '600px', lang: 'he', name: 'الاسم (عبري)' },
+
+                // اسم الأب
+                { text: data.fatherNameAr, top: '340px', left: '600px', lang: 'ar', name: 'اسم الأب (عربي)' },
+                { text: data.fatherNameHe, top: '358px', left: '600px', lang: 'he', name: 'اسم الأب (عبري)' },
+
+                // اسم الجد
+                { text: data.grandNameAr, top: '400px', left: '600px', lang: 'ar', name: 'اسم الجد (عربي)' },
+                { text: data.grandNameHe, top: '418px', left: '600px', lang: 'he', name: 'اسم الجد (عبري)' },
+
+                // اسم العائلة
+                { text: data.familyNameAr, top: '460px', left: '600px', lang: 'ar', name: 'العائلة (عربي)' },
+                { text: data.familyNameHe, top: '478px', left: '600px', lang: 'he', name: 'العائلة (عبري)' },
+
+                // اسم الأم
+                { text: data.motherNameAr, top: '520px', left: '600px', lang: 'ar', name: 'اسم الأم (عربي)' },
+                { text: data.motherNameHe, top: '538px', left: '600px', lang: 'he', name: 'اسم الأم (عبري)' },
+
+                // تاريخ الميلاد
+                { text: data.dobAr, top: '580px', left: '600px', lang: 'ar', name: 'تاريخ الميلاد (عربي)' },
+                { text: data.dobHe, top: '598px', left: '600px', lang: 'he', name: 'تاريخ الميلاد (عبري)' },
+
+                // مكان الولادة
+                { text: data.pobAr, top: '490px', left: '330px', lang: 'ar', name: 'مكان الولادة (عربي)' },
+                { text: data.pobHe, top: '510px', left: '330px', lang: 'he', name: 'مكان الولادة (عبري)' },
+
+                // الجنس والديانة
+                { text: data.genderAr, top: '550px', left: '460px', lang: 'ar', name: 'الجنس (عربي)' },
+                { text: data.genderHe, top: '570px', left: '460px', lang: 'he', name: 'الجنس (عبري)' },
+                
+                { text: data.religionAr, top: '550px', left: '330px', lang: 'ar', name: 'الديانة (عربي)' },
+                { text: data.religionHe, top: '570px', left: '330px', lang: 'he', name: 'الديانة (عبري)' },
+
+                // مكان وتاريخ الإصدار
+                { text: data.issuePlaceAr, top: '610px', left: '330px', lang: 'ar', name: 'مكان الإصدار (عربي)' },
+                { text: data.issuePlaceHe, top: '630px', left: '330px', lang: 'he', name: 'مكان الإصدار (عبري)' },
+
+                { text: data.issueDateAr, top: '610px', left: '460px', lang: 'ar', name: 'تاريخ الإصدار (عربي)' },
+                { text: data.issueDateHe, top: '630px', left: '460px', lang: 'he', name: 'تاريخ الإصدار (عبري)' }
+            ];
+const stamp = document.createElement("img");
+stamp.src = "https://i.imgur.com/27BB2UJ.png";
+stamp.className = "draggable";
+stamp.style.position = "absolute";
+stamp.style.left = "690px";
+stamp.style.top = "430px";
+stamp.style.width = "180px";
+stamp.style.opacity = "1";
+stamp.style.filter = "none";
+
+workspace.appendChild(stamp);
+makeDraggable(stamp, "الختم");
+            fields.forEach(f => {
+                const div = document.createElement('div');
+                // David Bold للنص العبري فقط، أما العربية والأرقام (مثل التواريخ) فـ Arial Bold
+                const isHebrewText = f.lang === 'he' && /[\u0590-\u05FF]/.test(f.text || '');
+                div.className = `draggable ${isHebrewText ? 'he-element' : 'ar-element'}`;
+                div.innerText = f.text;
+                div.style.top = f.top;
+                div.style.left = f.left;
+                div.style.fontSize = isHebrewText ? '15px' : '17px';
+                workspace.appendChild(div);
+                makeDraggable(div, f.name);
+            });
+        }
+
+        // جعل العناصر قابلة للسحب والتحديد (تدعم اللمس والماوس)
+        function makeDraggable(elmnt, name) {
+            let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+            
+            // أحداث الماوس
+            elmnt.addEventListener('mousedown', dragMouseDown);
+            // أحداث اللمس للهواتف الذكية
+            elmnt.addEventListener('touchstart', dragTouchStart, { passive: false });
+
+            function selectEl() {
+                if (activeElement) activeElement.classList.remove('selected');
+                activeElement = elmnt;
+                activeElement.classList.add('selected');
+                
+                // تحديث المؤشر والشرائط الجانبية
+                document.getElementById('selected-indicator').style.display = 'block';
+                document.getElementById('active-el-name').innerText = name;
+                updateControls();
+            }
+
+            function dragMouseDown(e) {
+                e.preventDefault();
+                selectEl();
+                pos3 = e.clientX;
+                pos4 = e.clientY;
+                document.onmouseup = closeDragElement;
+                document.onmousemove = elementDrag;
+            }
+
+            function elementDrag(e) {
+                e.preventDefault();
+                pos1 = pos3 - e.clientX;
+                pos2 = pos4 - e.clientY;
+                pos3 = e.clientX;
+                pos4 = e.clientY;
+                elmnt.style.top = (elmnt.offsetTop - pos2) + "px";
+                elmnt.style.left = (elmnt.offsetLeft - pos1) + "px";
+            }
+
+            function closeDragElement() {
+                document.onmouseup = null;
+                document.onmousemove = null;
+            }
+
+            function dragTouchStart(e) {
+                selectEl();
+                let touch = e.touches[0];
+                pos3 = touch.clientX;
+                pos4 = touch.clientY;
+                document.addEventListener('touchend', closeTouchDrag, { passive: false });
+                document.addEventListener('touchmove', touchDrag, { passive: false });
+            }
+
+            function touchDrag(e) {
+                e.preventDefault();
+                let touch = e.touches[0];
+                pos1 = pos3 - touch.clientX;
+                pos2 = pos4 - touch.clientY;
+                pos3 = touch.clientX;
+                pos4 = touch.clientY;
+                elmnt.style.top = (elmnt.offsetTop - pos2) + "px";
+                elmnt.style.left = (elmnt.offsetLeft - pos1) + "px";
+            }
+
+            function closeTouchDrag() {
+                document.removeEventListener('touchend', closeTouchDrag);
+                document.removeEventListener('touchmove', touchDrag);
+            }
+        }
+
+        // تحديث أزرار التحكم
+        function updateControls() {
+            if (!activeElement) return;
+            const style = window.getComputedStyle(activeElement);
+            
+            // الحجم
+            if (activeElement.tagName === "IMG") {
+    document.getElementById("fontSize-ctrl").value =
+        parseInt(activeElement.style.width) / 8;
+} else {
+    document.getElementById("fontSize-ctrl").value =
+        parseFloat(style.fontSize);
+}
+            // الشفافية
+            document.getElementById('opacity-ctrl').value = style.opacity;
+            
+            // التغبيش
+            let blurVal = 0;
+            const filter = style.filter;
+            if (filter && filter !== 'none') {
+                const match = filter.match(/blur\((.*?)\)/);
+                if (match) blurVal = parseFloat(match[1]);
+            }
+            document.getElementById('blur-ctrl').value = blurVal;
+        }
+
+        // معالجات أحداث شرائط التعديل
+        document.getElementById('fontSize-ctrl').addEventListener('input', function () {
+    if (!activeElement) return;
+
+    if (activeElement.tagName === "IMG") {
+        activeElement.style.width = this.value * 8 + "px";
+    } else {
+        activeElement.style.fontSize = this.value + "px";
+    }
+});
+        document.getElementById('opacity-ctrl').addEventListener('input', function() {
+            if (activeElement) activeElement.style.opacity = this.value;
+        });
+
+        document.getElementById('blur-ctrl').addEventListener('input', function() {
+            if (activeElement) activeElement.style.filter = this.value > 0 ? `blur(${this.value}px)` : 'none';
+        });
+
+        // التحريك الدقيق (Nudging)
+        function nudge(direction) {
+            if (!activeElement) return;
+            const step = 1; // 1 بكسل للتعديل الدقيق للغاية
+            const top = activeElement.offsetTop;
+            const left = activeElement.offsetLeft;
+
+            if (direction === 'up') activeElement.style.top = (top - step) + 'px';
+            if (direction === 'down') activeElement.style.top = (top + step) + 'px';
+            if (direction === 'left') activeElement.style.left = (left - step) + 'px';
+            if (direction === 'right') activeElement.style.left = (left + step) + 'px';
+        }
+
+        // معالجة تكبير وتصغير مساحة العمل لتناسب شاشات الهاتف تلقائياً
+        function adjustWorkspaceScale() {
+            const container = document.querySelector('.workspace-container');
+            const ws = document.getElementById('card-front-workspace');
+            const containerWidth = container.clientWidth;
+            const baseWidth = 1000; // العرض الحقيقي للبطاقة عالية الدقة
+
+            if (containerWidth < baseWidth) {
+                const scale = containerWidth / baseWidth;
+                ws.style.transform = `scale(${scale})`;
+                ws.style.transformOrigin = 'top right';
+                container.style.height = (673 * scale + 30) + 'px';
+            } else {
+                ws.style.transform = 'none';
+                container.style.height = 'auto';
+            }
+        }
+
+        window.onload = function() {
+            buildCard();
+            adjustWorkspaceScale();
+            setTimeout(adjustWorkspaceScale, 200); // تأكيد الضبط
+        };
+        window.onresize = adjustWorkspaceScale;
+
+        // التقاط الصورة وتصديرها
+        function saveImage() {
+            if (activeElement) activeElement.classList.remove('selected');
+            
+            const btn = document.querySelector('.btn-save');
+            btn.innerText = "جاري التقاط الشاشة وتحسينها...";
+            btn.disabled = true;
+
+            const EXPORT_SCALE = 3; // دقة 3x
+            const liveImg = document.getElementById('front-img');
+            const liveW = liveImg ? liveImg.offsetWidth : 0;
+            const liveH = liveImg ? liveImg.offsetHeight : 0;
+
+            html2canvas(workspace, {
+                scale: EXPORT_SCALE,
+                useCORS: true,
+                backgroundColor: null,
+                onclone: (doc) => {
+                    const ws = doc.getElementById('card-front-workspace');
+                    // إلغاء تصغير الشاشة (للجوال) حتى لا تتأثر دقة الصورة الناتجة
+                    ws.style.transform = 'none';
+                    // html2canvas لا يدعم object-fit فتتمدد الصورة؛ نرسمها بقص cover من الأصل بدقة كاملة
+                    const cloneImg = doc.getElementById('front-img');
+                    if (cloneImg && liveImg && liveImg.naturalWidth) {
+                        const cw = Math.round(liveW * EXPORT_SCALE), ch = Math.round(liveH * EXPORT_SCALE);
+                        const cv = doc.createElement('canvas');
+                        cv.width = cw; cv.height = ch;
+                        const ctx = cv.getContext('2d');
+                        ctx.imageSmoothingEnabled = true;
+                        ctx.imageSmoothingQuality = 'high';
+                        const nw = liveImg.naturalWidth, nh = liveImg.naturalHeight;
+                        const k = Math.max(cw / nw, ch / nh);
+                        const sw = cw / k, sh = ch / k;
+                        ctx.drawImage(liveImg, (nw - sw) / 2, (nh - sh) / 2, sw, sh, 0, 0, cw, ch);
+                        cv.className = cloneImg.className;
+                        cv.style.cssText = cloneImg.style.cssText;
+                        cv.style.display = 'block';
+                        cv.style.width = liveW + 'px';
+                        cv.style.height = liveH + 'px';
+                        cv.style.border = '1px solid #1e293b';
+                        cloneImg.parentNode.replaceChild(cv, cloneImg);
+                    }
+                }
+            }).then(canvas => {
+                const link = document.createElement('a');
+                link.download = `ID_Front_${data.idNumber}.png`;
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+                
+                btn.innerText = "💾 حفظ لقطة الشاشة للبطاقة الأمامية";
+                btn.disabled = false;
+            }).catch(err => {
+                alert('حدث خطأ أثناء حفظ الصورة');
+                btn.innerText = "💾 حفظ لقطة الشاشة للبطاقة الأمامية";
+                btn.disabled = false;
+            });
+        }
+    </script>
+</body>
+</html>
